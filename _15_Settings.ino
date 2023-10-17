@@ -3,8 +3,8 @@ class T1settings {
   
     public:
       
-    // ------------------------------- stałe i informacje w których komórkach są zapisane ustawienia
-    static const byte ROWS = 9;                                              /* four rows */
+    /*** stałe i informacje w których komórkach są zapisane ustawienia ***/
+    static const byte ROWS = 9; /* four rows */ // todo - check it
     static const byte COLS = 4; 
     static const byte AccAdd = 127;
   
@@ -12,13 +12,13 @@ class T1settings {
   
     byte settingsX[ROWS][COLS] = 
     {
-        { 10, 2, 0, 10 },   // prędkość wiatru w km/h od której włącza się alarm
-        { 5,  5, 0, 11 },    // czas między wypoziomowaniem panali a próbami powrotu do normalnej pracy
-        { 20, 1, 0, 15 },    // maksymalny czas poruszania się siłownika ????? czy potrzebne
-        { 5,  1, 0, 16 },   // czas w minutach (sekundach) w których siłownik nie pracuje
-        { 10, 2, 0, 20 },   // minimalna róznica w odczytach z czujników nasłonecznienia, żeby nastąpiło przesunięcie instalacji
-        { 120,2, 0, 21 },   // poziom odczytu z czujników nasłonecznienia po których następuje ustawienie instalacji na noc
-        { 3,  2, 0, 22 },    // czas w minutach po których, jeśli jest ciemno następuje ustawienie w pozycji noc
+        { 10, 2, 0, 10 },  // prędkość wiatru w km/h od której włącza się alarm
+        { 5,  5, 0, 11 },  // czas między wypoziomowaniem panali a próbami powrotu do normalnej pracy
+        { 20, 1, 0, 15 },  // maksymalny czas poruszania się siłownika ????? czy potrzebne
+        { 5,  1, 0, 16 },  // czas w minutach (sekundach) w których siłownik nie pracuje
+        { 10, 2, 0, 20 },  // minimalna róznica w odczytach z czujników nasłonecznienia, żeby nastąpiło przesunięcie instalacji
+        { 120,2, 0, 21 },  // poziom odczytu z czujników nasłonecznienia po których następuje ustawienie instalacji na noc
+        { 3,  2, 0, 22 },  // czas w minutach po których, jeśli jest ciemno następuje ustawienie w pozycji noc
         { AccAdd, 1, AccAdd, 30 },  // 100 = level 0
         { AccAdd, 1, AccAdd, 32 },  //  100 = 0, poniżej to minus, powyżej to plus
     };
@@ -30,8 +30,8 @@ class T1settings {
     byte SolSenDelta;       // minimalna róznica w odczytach z czujników nasłonecznienia, żeby nastąpiło przesunięcie instalacji
     byte SolSenNight;       // suma z czujników przy której przestaje włączać sterowanie
     byte NightPosTimeM;     // czas w minutach po których, jeśli jest ciemno następuje ustawienie w pozycji noc
-    int LevelAdj;     // modyfikacja odczytu z czujnika konta położenia paneli
-    int SolSenAdj;      // modyfikacja odczytu z czujnika słońca, pozycja East
+    int LevelAdj;           // modyfikacja odczytu z czujnika konta położenia paneli
+    int SolSenAdj;          // modyfikacja odczytu z czujnika słońca, pozycja East
   
     bool testMode;
     
@@ -40,8 +40,8 @@ class T1settings {
     void T1settings::setup()
     {
         saveTeEpprom(63);
-//        this->memoryReset();          // przywraca ustawienia 'fabryczne'
-        this->testMode = true;        // jeśli true, pracuje w trybie testowym, inne czasy działania itp
+        // this->memoryReset();  // przywraca ustawienia 'fabryczne'
+        this->testMode = true;   // if true, working in test mode (diferent times, etc.)
 
         for (int i = 0 ; i < this->ROWS ; i++) {
 
@@ -144,7 +144,7 @@ class T1settings {
         Serial.print(F(" getSettingsNames - row: "));
         Serial.print(row);
         String names[ROWS][2] =
-        {           //  "12345123451234512345"
+        {           //  "12345123451234512345" // todo - what is it?
             { "WindSpeedAlarmKm", "Alarm ON Wind Speed km/h" },
             { "WindAlarmTimeM",   "Wind alarm time (M)"  },
             { "ActMaxMoveTimeS",  "Max move time (S)" },
@@ -165,7 +165,8 @@ class T1settings {
     String T1settings::getDesc(String name)
     {
         saveTeEpprom(67);
-        // varibleName, varigle Description, change settings STEP
+
+        // varibleName, varible Description, change settings STEP
         for (int i = 0 ; i < this->ROWS ; i++) {
 
             String tempName = this->getSettingsNames(i, 0);
@@ -176,7 +177,7 @@ class T1settings {
         }
     }
       
-    void T1settings::save(int address, byte value)    // do zapisywania danych do pamięci stałej
+    void T1settings::save(int address, byte value)  // do zapisywania danych do pamięci stałej
     {
         saveTeEpprom(68);
         EEPROM.write(address, value);
@@ -187,7 +188,7 @@ class T1settings {
         Serial.println(value);
     }
     
-    byte T1settings::read(int address)    // do odczytywania danych z pamięci stałej
+    byte T1settings::read(int address)  // do odczytywania danych z pamięci stałej
     {
         saveTeEpprom(69);
         byte value = EEPROM.read(address);
@@ -198,7 +199,7 @@ class T1settings {
         return 255;
     }
 
-    // funkcja zapisuje do pamięci ustawienia 'fabryczne'
+    /*** funkcja zapisuje do pamięci ustawienia 'fabryczne' ***/
     void T1settings::memoryReset()
     {
         saveTeEpprom(70);
