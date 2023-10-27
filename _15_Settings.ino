@@ -3,35 +3,34 @@ class T1settings {
   
     public:
       
-    /*** stałe i informacje w których komórkach są zapisane ustawienia ***/
+    /*** constants and information in which cells the settings are saved ***/
     static const byte ROWS = 9; /* four rows */ // todo - check it
     static const byte COLS = 4; 
     static const byte AccAdd = 127;
   
-    // value, step, add, memory
-  
-    byte settingsX[ROWS][COLS] = 
+    // { value, step, add, memory }
+    byte settingsX[ROWS][COLS] =
     {
-        { 10, 2, 0, 10 },  // prędkość wiatru w km/h od której włącza się alarm
-        { 5,  5, 0, 11 },  // czas między wypoziomowaniem panali a próbami powrotu do normalnej pracy
-        { 20, 1, 0, 15 },  // maksymalny czas poruszania się siłownika ????? czy potrzebne
-        { 5,  1, 0, 16 },  // czas w minutach (sekundach) w których siłownik nie pracuje
-        { 10, 2, 0, 20 },  // minimalna róznica w odczytach z czujników nasłonecznienia, żeby nastąpiło przesunięcie instalacji
-        { 120,2, 0, 21 },  // poziom odczytu z czujników nasłonecznienia po których następuje ustawienie instalacji na noc
-        { 3,  2, 0, 22 },  // czas w minutach po których, jeśli jest ciemno następuje ustawienie w pozycji noc
+        { 10, 2, 0, 10 },  // wind speed in km/h at which the alarm is triggered
+        { 5,  5, 0, 11 },  // the time between leveling the panels and attempts to return to normal operation
+        { 20, 1, 0, 15 },  // maximum actuator movement time ????? whether necessary
+        { 5,  1, 0, 16 },  // time in minutes (seconds) during which the actuator is not working
+        { 10, 2, 0, 20 },  // minimum difference in readings from sunlight sensors for the installation to be moved
+        { 120,2, 0, 21 },  // reading level from the sunlight sensors, after which the installation is set to night
+        { 3,  2, 0, 22 },  // time in minutes after which, if it is dark, it is set to the night position
         { AccAdd, 1, AccAdd, 30 },  // 100 = level 0
-        { AccAdd, 1, AccAdd, 32 },  //  100 = 0, poniżej to minus, powyżej to plus
+        { AccAdd, 1, AccAdd, 32 },  //  100 = 0, below is minus, above is plus
     };
 
-    byte WindSpeedAlarmKm;  // prędkość wiatru w km/h od której włącza się alarm
-    byte WindAlarmTimeM;    // czas między wypoziomowaniem panali a próbami powrotu do normalnej pracy
-    byte ActMaxMoveTimeS;   // maksymalny czas poruszania się siłownika ????? czy potrzebne
-    byte ActBreakTimeS;     // czas w sekundach w których siłownik nie pracuje
-    byte SolSenDelta;       // minimalna róznica w odczytach z czujników nasłonecznienia, żeby nastąpiło przesunięcie instalacji
-    byte SolSenNight;       // suma z czujników przy której przestaje włączać sterowanie
-    byte NightPosTimeM;     // czas w minutach po których, jeśli jest ciemno następuje ustawienie w pozycji noc
-    int LevelAdj;           // modyfikacja odczytu z czujnika konta położenia paneli
-    int SolSenAdj;          // modyfikacja odczytu z czujnika słońca, pozycja East
+    byte WindSpeedAlarmKm;  // wind speed in km/h at which the alarm is triggered
+    byte WindAlarmTimeM;    // the time between leveling the panels and attempts to return to normal operation
+    byte ActMaxMoveTimeS;   // maximum actuator movement time ????? whether necessary
+    byte ActBreakTimeS;     // time in seconds during which the actuator is not working
+    byte SolSenDelta;       // minimum difference in readings from sunlight sensors for the installation to be moved
+    byte SolSenNight;       // the sum from the sensors at which the control stops turning on
+    byte NightPosTimeM;     // time in minutes after which, if it is dark, it is set to the night position
+    int LevelAdj;           // modification of the reading from the panel position account sensor
+    int SolSenAdj;          // modification of the reading from the sun sensor, East position
   
     bool testMode;
     
@@ -40,14 +39,14 @@ class T1settings {
     void T1settings::setup()
     {
         saveTeEpprom(63);
-        // this->memoryReset();  // przywraca ustawienia 'fabryczne'
-        this->testMode = true;   // if true, working in test mode (diferent times, etc.)
+        // this->memoryReset();  // restores 'factory' settings
+        this->testMode = true;   // if true, working in test mode (different times, etc.)
 
         for (int i = 0 ; i < this->ROWS ; i++) {
 
             byte temp = this->read( this->settingsX[i][3] );
             if(temp == 255){
-                // Serial.println(" zapis do pamięci " );
+                // Serial.println(" writing to memory " );
                 this->set( i, this->settingsX[i][0] ) ;
 
                 this->save(
@@ -177,7 +176,7 @@ class T1settings {
         }
     }
       
-    void T1settings::save(int address, byte value)  // do zapisywania danych do pamięci stałej
+    void T1settings::save(int address, byte value)  // to save data to permanent memory
     {
         saveTeEpprom(68);
         EEPROM.write(address, value);
@@ -188,7 +187,7 @@ class T1settings {
         Serial.println(value);
     }
     
-    byte T1settings::read(int address)  // do odczytywania danych z pamięci stałej
+    byte T1settings::read(int address)  // for reading data from permanent memory
     {
         saveTeEpprom(69);
         byte value = EEPROM.read(address);
@@ -199,7 +198,7 @@ class T1settings {
         return 255;
     }
 
-    /*** funkcja zapisuje do pamięci ustawienia 'fabryczne' ***/
+    /*** function saves 'factory' settings to memory ***/
     void T1settings::memoryReset()
     {
         saveTeEpprom(70);

@@ -1,8 +1,6 @@
 
-
-
-// ---------------------------- do klawiatury
-void keyControll(char customKey){
+// ---------------------------- to the keyboard
+void keyControl(char customKey){
 
     saveTeEpprom(13);
   if(!Screen.lcdStateOn){ Screen.lcdOn(); return; }
@@ -14,10 +12,10 @@ void keyControll(char customKey){
     if(Screen.lcdStateOn){ Screen.exit(); }
   }
 }
-//*********************************************************************************
+//******************************************************
 
-// -------------------------------------------- do czujnika prędkości wiatru
-#define WIND_FACTOR 2.4                                                     // for km/h  - #define WIND_FACTOR 1.492 // for mp/h
+// ---------------------------- to the wind speed sensor
+#define WIND_FACTOR 2.4                                     // for km/h  - #define WIND_FACTOR 1.492 // for mp/h
 #define ANEMOMETER_PIN 3
 #define ANEMOMETER_INT 2
  
@@ -28,37 +26,39 @@ float lastWindCheck;
  
 void setupAnemometerInt()
 {
-//    saveTeEpprom(14);
-  delayMicroseconds(100);   //50
-  pinMode(ANEMOMETER_INT,INPUT_PULLUP);                                     // ustawienie pinu który będzie zliczał impulzy
-  attachInterrupt(digitalPinToInterrupt(ANEMOMETER_INT),anemometerClick,RISING); // ustawienie która funkcja będzie uruchamiana do zliczania impulsów
-//  attachInterrupt(digitalPinToInterrupt(ANEMOMETER_INT),anemometerClick,FALLING); // ustawienie która funkcja będzie uruchamiana do zliczania impulsów
-  interrupts();                                                             // uruchomienie działania interuptora
+    // saveTeEpprom(14);
+    delayMicroseconds(100);   //50
+    pinMode(ANEMOMETER_INT,INPUT_PULLUP);                   // setting the pin that will count impulses
+                                                            // setting which function will be activated to count impulses
+    attachInterrupt(digitalPinToInterrupt(ANEMOMETER_INT),anemometerClick,RISING);
+                                                            // setting which function will be activated to count impulses
+    //  attachInterrupt(digitalPinToInterrupt(ANEMOMETER_INT),anemometerClick,FALLING);
+    interrupts();                                           // starting the interuptor operation
 }
 
 int get_wind_speed()
 {
     saveTeEpprom(15);
-    float deltaTime = (millis() - lastWindCheck) / 1000;                      // czas od ostatniego sprawdzenia prędkości, i konwertuje na sekundy
-    float windSpeed = (float)anem_count / deltaTime;                          // wyliczanie kliknięć anemometru w określonym odcinku czasu (na sekundę)
-    anem_count = 0;                                                           // resetuje ilość zliczonych kliknięć
-    //  windSpeed = (int)(windSpeed * WIND_FACTOR);                                                 // wyliczanie prędkości wiatru
+    float deltaTime = (millis() - lastWindCheck) / 1000;    // time since the last speed check, and converts to seconds
+    float windSpeed = (float)anem_count / deltaTime;        // calculating anemometer clicks in a specific period of time (per second)
+    anem_count = 0;                                         // resets the number of clicks counted
+    //  windSpeed = (int)(windSpeed * WIND_FACTOR);         // wind speed calculation
     lastWindCheck = millis();
 
     saveTeEpprom(20);
 
-    return((int)(windSpeed * WIND_FACTOR));                                                        // funkcja zwraca prędkość wiatru w wybranej jednostce (km/h)
+    return((int)(windSpeed * WIND_FACTOR));                 // the function returns the wind speed in the selected unit (km/h)
 }
  
 void anemometerClick()
 {
-//    saveTeEpprom(16);
-    // todo poprawic sposob wyliczania thisTime
+    // saveTeEpprom(16);
+    // todo - improve the calculation method for thisTime
     long thisTime = micros() - anem_last;
     anem_last = micros();
 
-    if(thisTime>500){                                                        // blokada do tego żeby nie uruchomiało liczenia kilka razy
+    if(thisTime>500){                                       // lock so that it does not run the counting several times
         anem_count++;
-        if(thisTime < anem_min) { anem_min = thisTime; }                      // TODO   sprawdzić czy to potrzebne
+        if(thisTime < anem_min) { anem_min = thisTime; }    // todo - check if it is needed
     }
 }

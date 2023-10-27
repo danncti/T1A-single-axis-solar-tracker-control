@@ -3,10 +3,10 @@
 #include "Arduino.h"
 #include <EEPROM.h>
 
-#include <avr/wdt.h>    // watchdog libary - for automatic reset
+#include <avr/wdt.h>    // watchdog library - for automatic reset / reboot
 
-#include <Keypad.h>                                               // dla klawiatury
-                                                                  // ------------------------------------------dla klawiatury
+// ------------------------------------------ for keyboard
+#include <Keypad.h>
 const byte ROWS = 1;                                              /* four rows */
 const byte COLS = 4;                                              /* four columns */
 char hexaKeys[ROWS][COLS] = { {'A','3','2','1'} };                /* define the symbols on the buttons of the keypads */
@@ -16,19 +16,19 @@ Keypad customKeypad ( makeKeymap(hexaKeys), rowPins, colPins, ROWS, COLS);
 
 int inByte = 0;                                                   // incoming serial byte
 
-unsigned int windSpeedKmh;                        // aktualna predkosc wiatru
+unsigned int windSpeedKmh;                  // current wind speed
 
 /********** FOR I2C SCANER **********/
-bool i2cScanerSetup()
+bool i2cScannerSetup()
 {
     saveTeEpprom(17);
     alarmBlink();
-    Serial.print(F("_80 i2cScanerSetup()"));
+    Serial.print(F("_80 i2cScannerSetup()"));
 
     #if defined (ESP8266) || defined(ESP32)
         uint8_t sda = 21;
         uint8_t scl = 22;
-        Wire.begin(sda, scl, 100000);  // ESP32 - change config pins if needed.
+        Wire.begin(sda, scl, 100000);       // ESP32 - change config pins if needed.
     #else
         Wire.begin();
     #endif
@@ -49,25 +49,25 @@ bool i2cScanerSetup()
     #endif
 }
 
-bool i2cScaner(byte testAddress)
+bool i2cScanner(byte testAddress)
 {
     saveTeEpprom(12);
-    byte errorResult;           // error code returned by I2C Wire.endTransmission()
+    byte errorResult;                       // error code returned by I2C Wire.endTransmission()
 
     Serial.print(F("Scanning 0x"));
-    if (testAddress < 0x10)  Serial.print(F("0"));                // pad single digit addresses with a leading "0"
+    if (testAddress < 0x10)  Serial.print(F("0"));  // pad single digit addresses with a leading "0"
     Serial.println(testAddress, HEX);
 
-    Wire.beginTransmission(testAddress);                          // initiate communication at current address
-    errorResult = Wire.endTransmission();                         // if a device is present, it will send an ack and "0" will be returned from function
+    Wire.beginTransmission(testAddress);            // initiate communication at current address
+    errorResult = Wire.endTransmission();           // if a device is present, it will send an ack and "0" will be returned from function
 
     Serial.println(F("Scan complete."));
 
-    if (errorResult == 0)                                           // "0" means a device at current address has acknowledged the serial communication
+    if (errorResult == 0)                           // "0" means a device at current address has acknowledged the serial communication
     {
         Serial.print(F("I2C device found at 0x"));
-        if (testAddress < 0x10) Serial.print(F("0"));                                // pad single digit addresses with a leading "0"
-        Serial.println(testAddress, HEX);                       // display the address on the serial monitor when a device is found
+        if (testAddress < 0x10) Serial.print(F("0"));  // pad single digit addresses with a leading "0"
+        Serial.println(testAddress, HEX);           // display the address on the serial monitor when a device is found
         Serial.println();
 
         return true;
@@ -79,53 +79,53 @@ bool i2cScaner(byte testAddress)
 /******************/
 
 
-//*****************************************************************************************************************************
-// FUNKCJE TESTOWE, POKAZOWE, MOŻNA BĘDZIE USUŃĄĆ, ...
-//
+//************************************************************************************************************
+// TEST AND DEMO FUNCTIONS - TO DELETE ...
+
 void alarmBlink()
 {
     saveTeEpprom(18);
-    digitalWrite(LED_BUILTIN, HIGH);   // turn the LED on
-    delay(500);                       // wait for half a second
-    digitalWrite(LED_BUILTIN, LOW);    // turn the LED off
-    delay(500);                       // wait for half a second
+    digitalWrite(LED_BUILTIN, HIGH);    // turn the LED on
+    delay(500);                         // wait for half a second
+    digitalWrite(LED_BUILTIN, LOW);     // turn the LED off
+    delay(500);                         // wait for half a second
 }
 
 unsigned long curMillis = millis();
-byte saveAddres = 52;
+byte saveAddress = 52;
 byte currentAddress = 53;
 byte lastValue = 250;
 bool toSave = false;
 
 void saveTeEpprom(byte value)
 {
-//Serial.print(F("  currentAddress "));
-//Serial.println(currentAddress);
-//EEPROM.write(saveAddres, currentAddress);
+    // Serial.print(F("  currentAddress "));
+    // Serial.println(currentAddress);
+    // EEPROM.write(saveAddress, currentAddress);
     if(toSave)
     {
-        // start recording usef function, to check with was last before freeze
-        // jeśli ta sama wartość co porzednio to nie zapisuje
+        // start recording use function, to check with was last before freeze
+        // if the same value as before, it does not save
         if(value == lastValue) return;
 
         EEPROM.write(currentAddress, value);
-//        Serial.print(F("2 currentAddress "));
-//        Serial.println(currentAddress);
+        // Serial.print(F("2 currentAddress "));
+        // Serial.println(currentAddress);
         lastValue = value;
-
-    }else{
-
+    }
+    else
+    {
         curMillis = millis();
         if (curMillis >= 5000 && !toSave) { // 60000
 
-            // po uruchomieniu pobiera ostatnio wykożystany adres i zwiększa go o 1
-            currentAddress = (EEPROM.read(saveAddres)) + 1;
+            // after running, it takes the last used address and increases it by 1
+            currentAddress = (EEPROM.read(saveAddress)) + 1;
 
-            if(currentAddress >= 251){ currentAddress = saveAddres + 1; }
+            if(currentAddress >= 251){ currentAddress = saveAddress + 1; }
 
-            //currentAddress = saveAddres; // temp
-            // zapisuje adres z którego obecnie kożysta
-            EEPROM.write(saveAddres, currentAddress);
+            // currentAddress = saveAddress; // temp
+            // saves the address it is currently using
+            EEPROM.write(saveAddress, currentAddress);
 
             toSave = true;
         }
@@ -142,30 +142,31 @@ void readEppromTest()
 
     address = EEPROM.read(52);
 
-    Serial.print(F("Ostatni zapis pod adresem-"));
+    Serial.print(F("Last entry at-"));
     Serial.println(address);
     Serial.println(F(" ") );
 
-    Serial.print(F("addres "));
+    Serial.print(F("address "));
     Serial.print(address);
     Serial.print(F(" value ") );
     Serial.println(EEPROM.read(address));
     Serial.println(F("---------------") );
-//
-//    address = 52;
-//    while(address < 252){
-//
-//        address++;
-//        delay(5);
-//        EEPROM.write(address, 200);
-//    }
-//    EEPROM.write(52, 52);
+
+    // address = 52;
+    // while(address < 252)
+    // {
+    //
+    //     address++;
+    //     delay(5);
+    //     EEPROM.write(address, 200);
+    // }
+    // EEPROM.write(52, 52);
 
     address = 51;
     while(address < 252){
 
         address++;
-        Serial.print(F("addres "));
+        Serial.print(F("address "));
         Serial.print(address);
         Serial.print(F(" value ") );
         Serial.println(EEPROM.read(address));
@@ -173,10 +174,10 @@ void readEppromTest()
 
 }
 
-void testKeyboard(char inByte)  // funkcja testowa, do testowania działania klawiatury, przez wpisywanie poleceń przez serial monitor
+void testKeyboard(char inByte)  // test function, for testing keyboard operation by entering commands via serial monitor
 {
-  if(inByte == 49){ keyControll('1'); } // 1 na klawiaturze - do testów
-  if(inByte == 50){ keyControll('2'); } // 2 na klawiaturze - do testów
-  if(inByte == 51){ keyControll('3'); } // 3 na klawiaturze - do testów
-  if(inByte == 46){ keyControll('A'); } // . na klawiaturze - do testów
+    if(inByte == 49){ keyControl('1'); } // 1 on the keyboard - for testing
+    if(inByte == 50){ keyControl('2'); } // 2 on the keyboard - for testing
+    if(inByte == 51){ keyControl('3'); } // 3 on the keyboard - for testing
+    if(inByte == 46){ keyControl('A'); } // . on the keyboard - for testing
 }
