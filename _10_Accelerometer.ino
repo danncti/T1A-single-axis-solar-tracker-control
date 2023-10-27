@@ -12,15 +12,15 @@ class T1accelerometer {
     int lastAccX;
     byte accReset;
 
-    bool accelConnected = false;  // true - if i2cScaner(0x68) will find the device
+    bool accelConnected = false;  // true - if i2cScanner(0x68) will find the device
 
     bool setup()
     {
         saveTeEpprom(44);
-        this->accelConnected = i2cScaner(0x68);
+        this->accelConnected = i2cScanner(0x68);
         if(this->accelConnected) {
 
-            // TODO ustawić opóżnienie przed uruchomieniem czujnika, albo procedure sprawdzania czy jest wystartowany
+            // todo - set delay before sensor start, or checking procedure if (already) working
             this->setup_mpu_6050_registers();
 
             this->reset();
@@ -69,11 +69,10 @@ class T1accelerometer {
 
         if(busStatus != 0x00)
         {
-           Serial.println("Transmission Error.... accelerometer not working!");  // transmission error wait here for ever
+            Serial.println("Transmission Error.... accelerometer not working!");  // transmission error wait here for ever
 
-            // todo ustawić w pętli głównej opóżnienie ponownego setupu acceleratometru
-            // todo nadal od czasu do czasu program się zawiesza przy odłączaniu wtyczki
-            // this->setup();
+            // todo - set in main loop delay for another accelerometer setup
+            // todo - app still from time to time is stop working when sensor are disconnected, eg. plug disconnected
 
            return false;
         }
@@ -85,11 +84,12 @@ class T1accelerometer {
     
     void balanceCount()
     {
-        // ogranicza zakres wczytywanych danych do normalnego poziony przy przechyleniu
+        // limits the range of loaded data to the normal tilted position
+
         if( (this->acc_x > -5000) && (this->acc_x < 5000) )
         {
-            // nie biorąc pod uwagę wartości wynikających z przyspieszenia powodowanego wstrząsami
-            // wycina szybkie zmiany, wsztrząsy 1 stopień to około 44.5
+            // without taking into account the values resulting from the acceleration caused by shocks
+            // cuts out rapid changes, shocks 1 degree is about 44.5
             if( ( (unsigned int)((this->lastAccX - this->acc_x )+50) ) < 100 )
             {
                 this->accAverage = this->accAverage + this->acc_x;
@@ -98,7 +98,7 @@ class T1accelerometer {
             }
             else
             {
-                // resetuje zabezpiezenie wycinania wstrząsów
+                // resets shock cutting protection
                 if(this->accReset>10)
                 {
                     this->lastAccX = this->acc_x;
@@ -109,8 +109,9 @@ class T1accelerometer {
         }
     }
 
-    /*** stabilizacja odczytu konta pochylenia instalacji ***/
-    // zwraca wynik w zakresie -500 do 500,  0 oznacza poziome położenie
+    /*** stabilization of the reading of the installation inclination account ***/
+
+    // returns a result in the range -500 to 500, 0 being horizontal
     int balancedAcc()
     {
         saveTeEpprom(60);
@@ -121,8 +122,8 @@ class T1accelerometer {
             this->balanceCount();
         }
 
-        // po X przebiegach wylicza średnią
-        // bierze 1/10 średniej, co wycina drobne wachania
+        // after X runs it calculates the average
+        // takes 1/10 of the average, which cuts out minor fluctuations
         this->acc_x_bal = (this->accAverage/500);
 
         this->accAverage = 0;
@@ -134,5 +135,5 @@ class T1accelerometer {
     }
 };
 
-/*** klasa do obsługi czujnika poziomu, accelerometru ***/
+/*** class for handling level sensor, accelerometer ***/
 T1accelerometer accelClass;

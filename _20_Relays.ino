@@ -3,10 +3,10 @@ class T1relays {
 
     public:
 
-    /*** kod do styczników ***/
-    int relayW = 12;           // numer portu który wysyła sygnał do załączenie stycznika
-    int relayE = 11;           // numer portu który wysyła sygnał do załączenie stycznika
-    byte balanceAcetable = 3;  // dopuszczalny poziom odchylenia od poziomu, w czasie ustawienia poziomego
+    /*** code for relays ***/
+    int relayW = 12;           // port number that sends a signal to turn on the relay
+    int relayE = 11;           // port number that sends a signal to turn on the relay
+    byte balanceAcceptable = 3;  // permissible level of deviation from horizontal when placed horizontally
     unsigned long relayWonTimer = 0;
     unsigned long relayEonTimer = 0;
     unsigned long relaysTimerOff = 0;
@@ -21,25 +21,25 @@ class T1relays {
     // **************
     int pvWpin, pvEpin, pvWavgTemp, pvEavgTemp, pvCountAvg;
     int sensorValue, sensorValueW, sensorValueE ;
-    bool relaysOn;  // jak włączone to działają styczniki
-    bool nightPos;  // jeśli true to informacja żeby ustawić tracker w pozycji noc
-                                   // TODO może sprawdzić czy po restarcie nie jest noc
+    bool relaysOn;  // when turned on, the relays work
+    bool nightPos;  // if true, information to set the tracker to the night position
+    // todo - can check if it's not night after the restart
     bool settingLevel;
 
-    unsigned long relaysOffTime;   // czas przez który nie pracują styczniki, po ostatnim załączenieu w milisekundach
-    unsigned long relayMaxTimeOn;  // maksymalny czas załączenia stycznika w milisekundach
-    //unsigned long relayEMaxTimeOn = 3000;  // maksymalny czas załączenia stycznika w milisekundach
+    unsigned long relaysOffTime;   // time during which the relays do not operate after the last switching on in milliseconds
+    unsigned long relayMaxTimeOn;  // maximum relay activation time in milliseconds
+    //unsigned long relayEMaxTimeOn = 3000;  // maximum relay activation time in milliseconds
     unsigned long relayNightPosTimeM;
 
-    unsigned long relayWindAlarmTimeM;  // ustawienie jak długo ma być poziom po ustaniu wiatru ???
+    unsigned long relayWindAlarmTimeM;  // setting how long should the level be after the wind stops???
 
     T1relays::T1relays(){ }
 
     void T1relays::setup()
     {
         saveTeEpprom(71);
-        this->pvWpin = A0;  // numer portu który odczytuje sygnał z czujnika położenia słońca
-        this->pvEpin = A1;  // numer portu który odczytuje sygnał z czujnika położenia słońca
+        this->pvWpin = A0;  // port number that reads the signal from the sun position sensor
+        this->pvEpin = A1;  // port number that reads the signal from the sun position sensor
 
         pinMode(this->relayW, OUTPUT);
         pinMode(this->relayE, OUTPUT);
@@ -49,12 +49,12 @@ class T1relays {
 
         this->relayOn = false;
         this->windAlarm = false;
-        // TODO to może poprawić, żeby po restarcie nie zaczynał normalnej pracy tylko najpierw sprawdził prędkość wiatru
+        // todo - this may improve it so that after the restart it does not start normal operation but checks the wind speed first
 
-        this->relaysOn = true;   // jak włączone to działają styczniki
-        this->nightPos = false;  // TODO może sprawdzić czy po restarcie nie jest noc
+        this->relaysOn = true;   // when turned on, the relays work
+        this->nightPos = false;  // todo - can check if it's not night after the restart
 
-        this->settingLevel = false;  // jesle true to ustawia panele do poziomu
+        this->settingLevel = false;  // if true, it sets the panels horizontally
         this->pvCountAvg = 0;
         this->pvWavgTemp = 0;
         this->pvEavgTemp = 0;
@@ -64,63 +64,63 @@ class T1relays {
         this->pvAvgTimePreviousM = millis();
 
         Serial.println(F("101 relays setup +"));
-        this->setLevel();   // todo czy to tu potrzebne
+        this->setLevel();   // todo - Is it needed here?
 
-        this->setRelsysData();
+        this->setRelaysData();
 
     }
 
-    void T1relays::setRelsysData()
+    void T1relays::setRelaysData()
     {
         saveTeEpprom(24);
 
         unsigned int timeX = 60000;
         if(Settings.testMode) timeX = 1000;
 
-        Serial.println(F(" setRelsysData : "));
+        Serial.println(F(" setRelaysData : "));
 
-        this->relaysOffTime = (long)Settings.ActBreakTimeS * 1000  ;        // TODO   dodać    *60
-        this->relayMaxTimeOn = (long)Settings.ActMaxMoveTimeS * 1000 ;      // TODO   dodać    *60 ???
-        this->relayNightPosTimeM = (long)Settings.NightPosTimeM * timeX;    // TODO   dodać    *60
-        this->relayWindAlarmTimeM = (long)Settings.WindAlarmTimeM * timeX;  // TODO   dodać    *60
+        this->relaysOffTime = (long)Settings.ActBreakTimeS * 1000  ;        // todo -   add    *60    - testing settings shorter
+        this->relayMaxTimeOn = (long)Settings.ActMaxMoveTimeS * 1000 ;      // todo -   add    *60 ???
+        this->relayNightPosTimeM = (long)Settings.NightPosTimeM * timeX;    // todo -   add    *60
+        this->relayWindAlarmTimeM = (long)Settings.WindAlarmTimeM * timeX;  // todo -   add    *60
     }
 
 
-    void T1relays::relaysOnF(bool direction)  // East Wschód 0,     West Zachód 1
+    void T1relays::relaysOnF(bool direction)  // East 0,     West 1
     {
         saveTeEpprom(72);
         if(direction){
-            digitalWrite(this->relayE, LOW);   // wylacza stycznik
+            digitalWrite(this->relayE, LOW);   // turns off the relays
             delay(100);
-            digitalWrite(this->relayW, HIGH);  // włącza stycznik
+            digitalWrite(this->relayW, HIGH);  // turns on the relays
             delay(100);
 
         }else{
-            digitalWrite(this->relayW, LOW);   // wylacza stycznik
+            digitalWrite(this->relayW, LOW);   // turns off the relays
             delay(100);
-            digitalWrite(this->relayE, HIGH);  // włącza stycznik
+            digitalWrite(this->relayE, HIGH);  // turns on the relays
             delay(100);
         }
     }
 
-    /*** na podstawie odczytu z accelerometra poziomuje instalacje ***/
+    /*** levels the installation based on the reading from the accelerometer ***/
     void T1relays::setLevel()
     {
         // saveTeEpprom(73);
         Serial.print(F("124 relays setLevelrelays() = "));
         Serial.println(this->accelBalance);
 
-        // poziomowanie instalacji ???
-        if(this->accelBalance > balanceAcetable){
+        // installation leveling???
+        if(this->accelBalance > balanceAcceptable){
 
             this->relaysOnF(true);
-        }else if(this->accelBalance < -balanceAcetable){
+        }else if(this->accelBalance < -balanceAcceptable){
             this->relaysOnF(false);
         }else{
-            // wypoziomowana, koniec działania ???
+            // is level, end of operation ???
             this->relaysOffF();
             this->relaysBreak();
-            this->settingLevel = false;  // jeśli true to polecenie wypoziomowania instalacji
+            this->settingLevel = false;  // if true, the command to level the installation
         }
     }
 
@@ -129,7 +129,7 @@ class T1relays {
         // saveTeEpprom(74);
         unsigned long currentMillis = millis();
 
-        if ((unsigned long)(currentMillis - this->pvAvgTimePreviousM) >= 150) // zmienic n 250
+        if ((unsigned long)(currentMillis - this->pvAvgTimePreviousM) >= 150) // todo - change to - 250
         {
             this->pvWavgTemp = this->pvWavgTemp + analogRead(this->pvWpin);
             this->pvEavgTemp = this->pvEavgTemp + analogRead(this->pvEpin);
@@ -144,7 +144,7 @@ class T1relays {
             if(this->pvCountAvg > 9)
             {
                 this->sensorValueW = this->pvWavgTemp / 10;
-                // modyfikacja odczytu z czujnika słońca, pozycja East
+                // modification of the reading from the sun sensor, East position
                 this->sensorValueE = (this->pvEavgTemp / 10) + Settings.SolSenAdj;
 
                 this->pvCountAvg = 0;
@@ -155,7 +155,7 @@ class T1relays {
         }
     }
 
-    void  T1relays::relays() // TODO może zmienić
+    void  T1relays::relays() // todo - maybe change
     {
         saveTeEpprom(75);
         this->pvAvgCount();
@@ -167,7 +167,7 @@ class T1relays {
 
         if(!this->relaysOn)
         {
-            // jak wyłączone styczniki to nie przechodzi dalej
+            // if the relays are turned off, it does not go any further
             this->relaysOffF();
             this->relaysBreak();
             return;
@@ -175,75 +175,75 @@ class T1relays {
 
         unsigned long currentMillis = millis();
 
-        // dotyczy odliczania po włączaniu pozycji noc
+        // concerns the countdown after turning on the night position
         if(this->nightPos){
 
             if ((unsigned long)(currentMillis - this->relaysTimerOff) >= this->relayNightPosTimeM) {
 
                 this->relaysTimerOff = 0;
                 this->nightPos = false;
-                // Serial.println("5 koniec  czasu włączenia ");
-                // TODO - MOŻE ZMIENIĆ, NIE POWINNO BYĆ MOŻE PROBLEMU PÓŹNIEJ wyłącza styczniki jeśli nie zakończył się tryb poziomowania
+                // Serial.println("5 end of switch-on time ");
+                // todo - maybe change, THERE SHOULD BE NO PROBLEM LATER - Turns off the relays if the leveling mode has not ended
             }
         }
 
-        // dotyczy odliczania po zakończeniu alarmu wiatru
+        // applies to the countdown after the wind alarm ends
         if(this->windAlarm){
 
             if ((unsigned long)(currentMillis - this->relaysTimerOff) >= this->relayWindAlarmTimeM) {
 
                 this->relaysTimerOff = 0;
                 this->windAlarm = false;
-                // Serial.println("5 koniec  czasu włączenia ");
+                // Serial.println("5 end of switch-on time ");
 
-                // TODO - MOŻE ZMIENIĆ, NIE POWINNO BYĆ MOŻE PROBLEMU PÓŹNIEJ wyłącza styczniki jeśli nie zakończył się tryb poziomowania
+                // todo - maybe change, THERE SHOULD BE NO PROBLEM LATER - Turns off the relays if the leveling mode has not ended
 
             } else   return;
         }
 
         if(this->relaysTimerOff != 0)
         {
-            // znaczy że czas na wyłączenia styczników
+            // means it's time to turn off the relays
             if ((unsigned long)(currentMillis - this->relaysTimerOff) >= this->relaysOffTime)
             {
                 this->relaysTimerOff = 0;
-                // Serial.println("5 koniec  czasu włączenia ");
+                // Serial.println("5 end of switch-on time ");
             }
             else
             {
-                //Serial.println(" przerwa między włączemiami styczników  AAA ");
+                //Serial.println(" interval between switching on the relays  AAA ");
                 return;
             }
         }
         if(this->relayEonTimer != 0)
         {
-            // znaczy że był włączony
+            // means it was turned on
             if ((unsigned long)(millis() - this->relayEonTimer) >= this->relayMaxTimeOn)
             {
-                this->relaysOffF();       // wylącza styczniki
-                this->relayEonTimer = 0;  // reset czasu włączenia stycznika
-                this->relaysBreak();      // start odliczania czasu wyłączenia stycznikóœ
+                this->relaysOffF();       // turns off relays
+                this->relayEonTimer = 0;  // relays switch-on time reset
+                this->relaysBreak();      // start of the relays off time countdown
             }
         }
 
         if(this->relayWonTimer != 0)
         {
-            // znaczy że był włączony
+            // means it was turned on
             if ((unsigned long)(millis() - this->relayWonTimer) >= this->relayMaxTimeOn)
             {
-                // jeśli minął maksymalny czas włączenie to wyłącza stycznik
-                this->relayWonTimer = 0;  // reset czasu włączenia stycznika
-                this->relaysBreak();      // start odliczania czasu wyłączenia stycznikóœ
+                // if the maximum switch-on time has passed, the relays turns off
+                this->relayWonTimer = 0;  // relays switch-on time reset
+                this->relaysBreak();      // start of the relays off time countdown
             }
         }
 
         if(( this->sensorValueW + this->sensorValueE) > Settings.SolSenNight)
         {
-            // wykona się jeśli suma odczytów z czujnika słońca będzie większe
-            // niż ustawienie do pozycji noc....
+            // will be executed if the sum of readings from the sun sensor is greater
+            // than setting to the night position....
             if(this->sensorValueW > this->sensorValueE + Settings.SolSenDelta)
             {
-                digitalWrite(this->relayW, LOW);  // wyłącza stycznik
+                digitalWrite(this->relayW, LOW);  // turns off the relay
 
                 if(this->relayWonTimer != 0)
                 {
@@ -254,14 +254,14 @@ class T1relays {
 
                 if(this->relayEonTimer == 0 && this->relaysTimerOff == 0 && !this->relayOn)
                 {
-                    this->relayEonTimer = millis();    // Serial.println("2 ustawia timer włączenia");
-                    digitalWrite(this->relayE, HIGH);  // włącza stycznik
+                    this->relayEonTimer = millis();    // Serial.println("2 sets the on timer");
+                    digitalWrite(this->relayE, HIGH);  // turns on the relay
                     this->relayOn = true;
                 }
             }
             else if(this->sensorValueE > this->sensorValueW + Settings.SolSenDelta)
             {
-                digitalWrite(this->relayE, LOW);  // wyłącza stycznik
+                digitalWrite(this->relayE, LOW);  // turns off the relay
 
                 if(this->relayEonTimer != 0)
                 {
@@ -272,11 +272,10 @@ class T1relays {
 
                 if(this->relayWonTimer == 0 && this->relaysTimerOff == 0  && !this->relayOn)
                 {
-                    this->relayWonTimer = millis();    // Serial.println("2 ustawia timer włączenia");
-                    digitalWrite(this->relayW, HIGH);  // włącza stycznik
+                    this->relayWonTimer = millis();    // Serial.println("2 sets the on timer");
+                    digitalWrite(this->relayW, HIGH);  // turns on the relay
 
                     this->relayOn = true;
-
                 }
             }
             else
@@ -287,20 +286,20 @@ class T1relays {
         }
         else
         {
-            // Serial.println(F(" 226 pozycja noc, "));
+            // Serial.println(F(" 226 night position, "));
             this->nightPos = true;
             this->settingLevel = true;
-            // TODO   start odliczania czasu do ustawienia w pozycji noc...
-            // zmienna    NightPosTimeM
-            // jeśli przez ten czas nie będzie wyższych odczytów - ustawić w pozycji poziom
+            // todo - start the time countdown to set to the night position...
+            // variable - NightPosTimeM
+            // if there are no higher readings during this time - set the level position
         }
     }
 
     void T1relays::relaysOffF()
     {
         saveTeEpprom(76);
-        digitalWrite(this->relayW, LOW);  // wylacza stycznik
-        digitalWrite(this->relayE, LOW);  // wylacza stycznik
+        digitalWrite(this->relayW, LOW);  // turns off the relay
+        digitalWrite(this->relayE, LOW);  // turns off the relay
         this->relayOn = false;
         delay(20);
     }
@@ -308,8 +307,8 @@ class T1relays {
     void T1relays::relaysOffFtest()
     {
         saveTeEpprom(77);
-        digitalWrite(this->relayW, LOW);  // wylacza stycznik
-        digitalWrite(this->relayE, LOW);  // wylacza stycznik
+        digitalWrite(this->relayW, LOW);  // turns off the relay
+        digitalWrite(this->relayE, LOW);  // turns off the relay
         this->relayOn = false;
         delay(20);
     }
@@ -317,12 +316,12 @@ class T1relays {
     void T1relays::relaysBreak()
     {
         // saveTeEpprom(78);
-        this->relaysTimerOff = millis();  // start odliczania czasu wyłączenia styczników
+        this->relaysTimerOff = millis();  // start of the countdown of the relay switch-off time
         this->relayWonTimer = 0;
         this->relayEonTimer = 0;
     }
 
-    // funkcja uruchamia wind alarm, i ustawia kiedy go wyłączyć
+    // The function activates the wind alarm, and sets when to turn it off
     void T1relays::windAlarmSet()
     {
         saveTeEpprom(3);

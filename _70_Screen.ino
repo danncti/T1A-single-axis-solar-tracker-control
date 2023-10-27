@@ -14,30 +14,32 @@
 // Define proper RST_PIN if required.
 #define RST_PIN -1
 
+
+// class for menu and LCD display operation
 class T1screen {
 
     public:
 
-    bool lcdStateOn;                // true if lcd is on
+    bool lcdStateOn;                        // true if lcd is on
     bool lcdConnected;
     byte displayType;
     unsigned long previousMillisScreenOff, currentMillisScreenOff;
-    //unsigned int refreshLcd;
+    // unsigned int refreshLcd;
     byte menuMItems;
     byte menuLevel, position2, position3;
     bool enterPressed, confirm;
     byte position[3] = {0, 0, 0};
-    int newValue;                   // nowa wartość która będzie zapisana do pamięci
-    // TODO może zmienić typ na byte.
+    int newValue;                           // new value that will be saved to memory
+    // todo - can change type to - byte.
 
     byte changeStep;
 
-    #define Interval   120000           // czas w milisekundach po których wyłączy się podświetlenie w LCD
+    #define Interval   120000               // time in milliseconds after which the LCD backlight will turn off
 
-    // zmienne do funkcji refreshScreen()
-    #define RefreshScreen 1000   // czas w milisekundach po których odświerza się LCD
+                                            // variables to functions refreshScreen()
+    #define RefreshScreen 1000              // time in milliseconds after which the LCD refreshes
     unsigned long previousMillisScreenRefresh = 0;
-    // -----
+    // ----------
 
     LiquidCrystal_I2C lcd;
 
@@ -55,7 +57,7 @@ class T1screen {
 
         this->menuReset();
 
-        this->menuMItems = sizeof(position) - 1;              // zmienna która wskazuje na ilość pozycji w menu głównym
+        this->menuMItems = sizeof(position) - 1;  // a variable that indicates the number of items in the main menu
     }
 
     void T1screen::lcdSetup()
@@ -71,7 +73,7 @@ class T1screen {
 
             case 1: // LCD 20 x 4
                 Serial.println(F("109 1 lcdSetup "));
-                this->lcd.init();                      // initialize the lcd
+                this->lcd.init();           // initialize the lcd
                 this->lcdOn();
             break;
 
@@ -98,14 +100,14 @@ class T1screen {
         }
     }
 
-    // funkcja zwraca true jeśli jest czas na odświerzenie ekranu
+    // the function returns true if there is time to refresh the screen
     bool T1screen::refreshScreen()
     {
         if(this->lcdStateOn)
         {
-            unsigned long currentMillis = millis();                     // Get snapshot of time  ********** correct way to use  counters
+            unsigned long currentMillis = millis();  // Get snapshot of time  ********** correct way to use counters
 
-            if ((unsigned long)(currentMillis - this->previousMillisScreenRefresh) >= RefreshScreen)      // Refresh lcd
+            if ((unsigned long)(currentMillis - this->previousMillisScreenRefresh) >= RefreshScreen)  // Refresh lcd
             {
                 this->previousMillisScreenRefresh = currentMillis;
                 return true;
@@ -126,7 +128,7 @@ class T1screen {
                 this->downMenuLine();
             break;
 
-            case 1:     // list of available settings
+            case 1:  // list of available settings
                 this->settingsL2();
             break;
 
@@ -137,7 +139,7 @@ class T1screen {
 
     }
 
-    void T1screen::enter()                // funkcja wykonywana po wciśnięciu przycisku Enter
+    void T1screen::enter()  // function performed after pressing the Enter button
     {
         saveTeEpprom(27);
 
@@ -148,7 +150,8 @@ class T1screen {
             case 1:
                 if(this->menuLevel == 1) this->enterPressed = true;
                 this->menuLevel = 1;
-                // Serial.print(F("  enter ")); Serial.println(this->menuLevel); //Serial.print(F("  value ")); Serial.println(value);
+                // Serial.print(F(" enter ")); Serial.println(this->menuLevel);
+                // Serial.print(F(" value ")); Serial.println(value);
             break;
 
             case 2:
@@ -156,7 +159,8 @@ class T1screen {
                     this->menuLevel++;
                     this->position[this->menuLevel] = 0;
 
-                    if(this->menuLevel == 2){               // weiście do menu zmiany ustawień - pobranie danych obecnych i kroku zmiany
+                    if(this->menuLevel == 2){
+                        // entering the settings change menu - downloading current data and change step
                         this->newValue = Settings.get(this->position[1]);
                         this->changeStep = Settings.settingsX[this->position[1]][1];
                     }
@@ -171,8 +175,8 @@ class T1screen {
                         this->newValue  + Settings.settingsX[this->position[1]][2]
                     );
 
-                    Relay.setRelsysData();
-                    //   TODO   może dodać potwierdzenie zapisu????
+                    Relay.setRelaysData();
+                    // todo - can you add a confirmation of the save????
                 }
             break;
         }
@@ -209,10 +213,10 @@ class T1screen {
 
         this->previousMillisScreenOff = millis();
 
-        if(direct)                              // menu down, next
+        if(direct)                          // menu down, next  **********
         {
             switch(this->menuLevel){
-                case 0:   // level
+                case 0:  // level
                     this->position[0] ++;
                     if(this->position[0] > this->menuMItems){ this->position[0] = 0; }
                 break;
@@ -226,7 +230,7 @@ class T1screen {
                         if(this->position[this->menuLevel] > 2){ this->position[this->menuLevel] = 0;}
                     }
 
-                    Serial.print(F("  224 down ")); Serial.println(this->position[this->menuLevel]);
+                    Serial.print(F(" 224 down ")); Serial.println(this->position[this->menuLevel]);
                 break;
 
                 case 2:
@@ -238,7 +242,7 @@ class T1screen {
                 break;
             }
         }else{
-            switch(this->menuLevel){            // next menu position
+            switch(this->menuLevel){        // next menu position  **********
                 case 0:
 
                     if(this->position[0] > 0){
@@ -257,7 +261,7 @@ class T1screen {
                         else if(this->position[this->menuLevel] > 0) this->position[this->menuLevel]--;
                     }
 
-                    Serial.print(F("  254 down ")); Serial.println(this->position[this->menuLevel]);
+                    Serial.print(F(" 254 down ")); Serial.println(this->position[this->menuLevel]);
                 break;
 
                 case 2:
@@ -286,16 +290,16 @@ class T1screen {
 
             String menus[3] =
             {
-            { "Memory Reset" },
-            { "Set Panels Level" },
-            { "Test Mode" },
+                { "Memory Reset" },
+                { "Set Panels Level" },
+                { "Test Mode" },
             };
 
-            switch(this->position[1]){                            // po wejściu w wybraną pozycję MENU wyświetla się komunikat o potwerdzeniu
+            switch(this->position[1]){                        // After entering the selected MENU item, a confirmation message is displayed
                 case 0:
                     this->write_LCD(0,1, menus[0] );
 
-                    if(this->confirm && this->enterPressed){        // po potwierdzeniu wykonuje się ten kod
+                    if(this->confirm && this->enterPressed){  // after confirmation, this code is executed
 
                         Settings.memoryReset();
                         this->confirm = false;
@@ -306,11 +310,11 @@ class T1screen {
                 case 1:
                     this->write_LCD(0,1, menus[1] );
 
-                    if(this->confirm && this->enterPressed){        // po potwierdzeniu wykonuje się ten kod
+                    if(this->confirm && this->enterPressed){  // after confirmation, this code is executed
 
                         Serial.println(F(" set level confirmed "));
 
-                        Relay.settingLevel = true;                 // ustawia się instalacja do poziomu
+                        Relay.settingLevel = true;            // the installation is adjusted to the level
                         this->confirm = false;
                         this->enterPressed = false;
 
@@ -331,18 +335,18 @@ class T1screen {
                         this->write_LCD(10,1, F("OFF") );
                     }
 
-                    if(this->confirm && this->enterPressed){        // po potwierdzeniu wykonuje się ten kod
+                    if(this->confirm && this->enterPressed){  // after confirmation, this code is executed
 
                         this->confirm = false;
                         this->enterPressed = false;
 
                         if(Settings.testMode){
-                            Settings.testMode = false;             // włącza się tryb testowy, czyli między innymi inne czasy działania funkcji
+                            Settings.testMode = false;        // test mode is activated, i.e., among other things, different function operation times
                         }else{
-                            Settings.testMode = true;             // włącza się tryb testowy, czyli między innymi inne czasy działania funkcji
+                            Settings.testMode = true;         // test mode is activated, i.e., among other things, different function operation times
                         }
 
-                        Relay.setRelsysData();
+                        Relay.setRelaysData();
                         this->printMenu();
                     }
                 break;
@@ -382,7 +386,7 @@ class T1screen {
         }
     }
 
-    void T1screen::lcdOn()    // włączanie podświetlenia w lcd
+    void T1screen::lcdOn()  // turning on the LCD backlight
     {
         saveTeEpprom(32);
         switch(this->displayType){
@@ -403,7 +407,7 @@ class T1screen {
         this->currentMillisScreenOff = millis();
     }
 
-    void T1screen::lcdClear()    // włączanie podświetlenia w lcd
+    void T1screen::lcdClear()    // turning on the LCD backlight
     {
         saveTeEpprom(33);
         switch(this->displayType){
@@ -420,7 +424,7 @@ class T1screen {
         }
     }
 
-    void T1screen::lcdTurnOff()    // włączanie podświetlenia w lcd
+    void T1screen::lcdTurnOff()    // turning on the LCD backlight
     {
         saveTeEpprom(34);
         switch(this->displayType){
@@ -437,10 +441,10 @@ class T1screen {
         }
     }
 
-    void T1screen::lcdOff(bool force)    // wyłączanie podświetlenia w lcd
+    void T1screen::lcdOff(bool force)  // turning off the LCD backlight
     {
         saveTeEpprom(35);
-        if(force)                         // jeśli true - wymuszone wyłączenie lcd
+        if(force)                      // if true - forced LCD off
         {
             this->lcdTurnOff();
             this->lcdClear();
@@ -448,11 +452,11 @@ class T1screen {
             this->menuReset();
         }
 
-        this->currentMillisScreenOff = millis(); // update with every loop
+        this->currentMillisScreenOff = millis();  // update with every loop
 
         if (this->currentMillisScreenOff - this->previousMillisScreenOff >= Interval)
         {
-            this->previousMillisScreenOff = this->currentMillisScreenOff; // new startpoint
+            this->previousMillisScreenOff = this->currentMillisScreenOff;  // new start point
             this->lcdTurnOff();
             this->lcdClear();
             this->lcdStateOn = false;
@@ -479,7 +483,7 @@ class T1screen {
 
     void T1screen::write_LCD(int column, int row, String text )
     {
-//        saveTeEpprom(37);
+        // saveTeEpprom(37);
         switch(this->displayType){
             case 0:{
                 break;
@@ -621,4 +625,4 @@ class T1screen {
 
 };
 
-T1screen Screen;                                                      // klasa do obsługi menu i wyświetlacza lcd
+T1screen Screen;
